@@ -5,6 +5,7 @@ import androidx.lifecycle.MediatorLiveData
 import com.connectycube.chat.model.ConnectycubeAttachment
 import com.connectycube.chat.model.ConnectycubeChatDialog
 import com.connectycube.chat.model.ConnectycubeChatMessage
+import com.connectycube.chat.model.ConnectycubeDialogType
 import com.connectycube.messenger.api.*
 import com.connectycube.messenger.utilities.convertToMessage
 import com.connectycube.messenger.vo.AppExecutors
@@ -86,7 +87,11 @@ class MessageSenderRepository private constructor(private val messageDao: Messag
         val result = MediatorLiveData<Resource<ConnectycubeChatMessage>>()
         appExecutors.networkIO().execute {
             try {
-                dialog.sendMessage(chatMessage)
+                if (dialog.type == ConnectycubeDialogType.PRIVATE) {
+                    dialog.sendMessage(chatMessage)
+                } else {
+                    dialog.sendMessageWithoutJoin(chatMessage)
+                }
                 result.postValue(Resource.success(chatMessage))
             } catch (e: SmackException.NotConnectedException) {
                 result.postValue(
@@ -95,10 +100,16 @@ class MessageSenderRepository private constructor(private val messageDao: Messag
                         chatMessage
                     )
                 )
-                Timber.d(e)
+                Timber.w(e)
             } catch (e: InterruptedException) {
                 result.postValue(Resource.error(e.message ?: "InterruptedException", chatMessage))
-                Timber.d(e)
+                Timber.w(e)
+            } catch (e: IllegalStateException){
+                result.postValue(Resource.error(e.message ?: "IllegalStateException", chatMessage))
+                Timber.w(e)
+            } catch (e: Exception){
+                result.postValue(Resource.error(e.message ?: "Exception", chatMessage))
+                Timber.w(e)
             }
         }
         return result
@@ -133,6 +144,7 @@ class MessageSenderRepository private constructor(private val messageDao: Messag
     ): ConnectycubeChatMessage {
         val chatMessage = ConnectycubeChatMessage()
         chatMessage.id = messageToTempSave.id
+        chatMessage.dialogId = messageToTempSave.dialogId
         chatMessage.setSaveToHistory(true)
         chatMessage.dateSent = System.currentTimeMillis() / 1000
         chatMessage.isMarkable = true

@@ -246,7 +246,6 @@ class ChatMessageActivity : BaseChatActivity() {
 
     private fun bindToChatConnection() {
         chatDialog.initForChat(ConnectycubeChatService.getInstance())
-        initChat(chatDialog)
 
         subscribeMessageSenderAttachment()
         subscribeMessageSenderText()
@@ -385,21 +384,6 @@ class ChatMessageActivity : BaseChatActivity() {
 
     private fun updateChatAdapter() {
         chatAdapter.setOccupants(occupants)
-    }
-
-    private fun initChat(chatDialog: ConnectycubeChatDialog) {
-        when (chatDialog.type) {
-            ConnectycubeDialogType.GROUP, ConnectycubeDialogType.BROADCAST -> {
-                chatDialog.join(null)
-            }
-
-            ConnectycubeDialogType.PRIVATE -> Timber.d("ConnectycubeDialogType.PRIVATE type")
-
-            else -> {
-                Timber.d("Unsupported type")
-                finish()
-            }
-        }
     }
 
     private fun initManagers() {
